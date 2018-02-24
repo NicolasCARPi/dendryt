@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 import numpy as np
 from random import randint
+from random import choice
 
 class Dendryt():
     # get a random position on the canvas
     def getRandomPos(self):
-        return (randint(0, self.canvasSize - 1), randint(0, self.canvasSize -1))
+        return [randint(0, self.canvasSize - 1), randint(0, self.canvasSize -1)]
 
     # place the target on canvas
     def setPos(self, pos, value):
-        self.canvas[pos[0], pos[1]] = value
+        self.canvas[tuple(pos)] = value
 
     def setInitialCellPos(self):
         cellPos = self.getRandomPos()
@@ -22,28 +23,58 @@ class Dendryt():
             else:
                 cellPos = self.getRandomPos()
 
+
+    # cell can get N S E or W
+    def getDirection(self):
+        directions = ['N', 'E', 'S', 'W']
+        return choice(directions)
+
     # cell position
     def moveCell(self):
-        newPosX = self.cellPos[0] + 1
-        if newPosX > self.canvasSize - 1:
-            newPosX = self.cellPos[0] - randint(0, self.canvasSize - 1)
-        newPosY = self.cellPos[1] + 1
-        if newPosY > self.canvasSize - 1:
-            newPosY = self.cellPos[1] - randint(0, self.canvasSize - 1)
 
-        self.cellPos = (newPosX, newPosY)
+        direction = self.getDirection()
+        print("cell pos: ", self.cellPos)
+        print("Direction:", direction)
 
-        if self.canvas[self.cellPos] == 1:
-            print("Target found in {} loops.".format(self.loops))
-            raise SystemExit
+        try:
+            if direction == 'N':
+                newPos = self.cellPos[0] - 1
+                newCoord = [self.cellPos[0] - 1, self.cellPos[1]]
+            elif direction == 'E':
+                newPos = self.cellPos[1] + 1
+                newCoord = [self.cellPos[0], self.cellPos[1] + 1]
+            elif direction == 'S':
+                newPos = self.cellPos[0] + 1
+                newCoord = [self.cellPos[0] + 1, self.cellPos[1]]
+            elif direction == 'W':
+                newPos = self.cellPos[1] - 1
+                newCoord = [self.cellPos[0], self.cellPos[1] - 1]
 
-        self.setPos(self.cellPos, 2)
+            print("New coord: ", newCoord)
+
+            # check if the target is there
+            if self.canvas[tuple(newCoord)] == 1:
+                print("Target found in {} loops.".format(self.loops))
+                raise SystemExit
+
+            # place the cell on the canvas
+            if direction == 'N' or direction == 'S':
+                self.setPos([newPos, self.cellPos[1]], 2)
+                #self.cellPos[0] = newPos
+            else:
+                #self.cellPos[1] = newPos
+                self.setPos([self.cellPos[0], newPos], 2)
+            self.cellPos = newCoord
+
+        except IndexError:
+            print("Cell is not moving out of canvas.")
+
 
     # start script
     def __init__(self):
         # config
         self.canvasSize = 100
-        maxLoops = 10000000
+        maxLoops = 1000000
         # end config
 
         self.loops = 0
@@ -54,9 +85,14 @@ class Dendryt():
         self.setPos(self.targetPos, 1)
 
         self.setInitialCellPos()
+        print(self.canvas)
+
+        print("Cell pos:", self.cellPos)
+        # now start the search
         for x in range(0, maxLoops):
             self.moveCell()
             self.loops += 1
+            print(self.canvas)
         print("Target not found :(")
 
 app = Dendryt()
