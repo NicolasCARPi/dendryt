@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" media="all" href="css/main.css" />
+        <!-- load jQuery -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <!-- Load the Paper.js library -->
+        <script type="text/javascript" src="node_modules/paper/dist/paper-full.min.js"></script>
+        <!-- Load external PaperScript and associate it with myCanvas -->
+        <script type="text/paperscript" src="js/dendryt.js" data-paper-canvas="dcanvas">
+        </script>
+    </head>
+
+    <body>
+        <canvas id="dcanvas" data-paper-resize="true" data-paper-hidpi="off"></canvas>
+    </body>
+</html>
