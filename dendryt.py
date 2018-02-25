@@ -9,11 +9,12 @@ from random import choice
 
 class Dendryt():
     # CONFIG
-    CANVAS_SIZE = 200
-    MAX_LOOPS = 25
-    MAX_MOVES = 10000000
+    CANVAS_SIZE = 100
+    MAX_LOOPS = 20
+    MAX_MOVES = 20000
     # BETWEEN 1 AND 99
     PERSISTANCE_INDEX = 89
+    SHOW_LOOPS = True
     # END CONFIG
 
     def getRandomPos(self):
@@ -32,24 +33,8 @@ class Dendryt():
         """
             Set the starting position of the cell
         """
-        cellPos = self.getRandomPos()
-        # if we are on target get a new position, otherwise it's too easy :p
-        while True:
-            if cellPos != self.targetPos:
-                self.cellPos = self.startPos = cellPos
-
-                # make the cell visible on canvas
-                self.setPos(self.cellPos, 255)
-                break
-            else:
-                # get a new random position and try again
-                cellPos = self.getRandomPos()
-
-        #with open("results" + os.sep + "loop-" + str(self.currentLoop) + ".txt", "w") as log:
-        #    log.write("Starting at cell position:" + str(self.cellPos))
-        #    log.write("Target is at position:" + str(self.targetPos))
-        #log.close()
-
+        self.cellPos = self.startPos = self.getRandomPos()
+        self.setPos(self.cellPos, 255)
 
     def getDirection(self):
         """
@@ -72,7 +57,7 @@ class Dendryt():
             Move the cell of one unit in a direction
         """
 
-        # save the previous direction
+        # get a new direction and save it
         direction = self.previousDir = self.getDirection()
 
         try:
@@ -110,12 +95,12 @@ class Dendryt():
 
             #print("New coord:", newCoord)
             # check if the target is there
-            if newCoord == self.targetPos:
-                raise Exception
+            #if newCoord == self.targetPos:
+            #    raise Exception
 
             # place the cell on the canvas
             # can raise IndexError
-            self.setPos(newCoord, 128)
+            self.setPos(newCoord, 255)
 
             # update the internal cell position
             self.cellPos = newCoord
@@ -150,32 +135,33 @@ class Dendryt():
         self.previousDir = 'N'
         self.canvas = np.zeros((self.CANVAS_SIZE, self.CANVAS_SIZE), dtype=int)
         # where the target is
-        self.targetPos = self.getRandomPos()
-        self.setPos(self.targetPos, 255)
+        #self.targetPos = self.getRandomPos()
+        #self.setPos(self.targetPos, 255)
         # create the cell in a random position
         self.setInitialCellPos()
 
     def launchSearch(self):
         """
-            Move the cell around to try and find the target.
+            Move the cell around to try to cover the most ground
         """
         for move in range(0, self.MAX_MOVES):
-            try:
-                self.moveCell()
-            except Exception:
-                #print("Target found in {} moves.".format(move))
-                self.results.append(move)
+            self.moveCell()
 
-                # recolor the start position
-                self.canvas[tuple(self.startPos)] = 200
+        # the score is the mean value of the image
+        score = np.mean(self.canvas)
 
-                # draw image
-                #fig = plt.figure()
-                #plt.imshow(self.canvas, cmap='Greens')
-                #plt.title("Target found in {} moves. Start {}. Target {}".format(move, self.startPos, self.targetPos))
-                #fig.savefig("results" + os.sep + "loop-" + str(self.currentLoop) + ".png", dpi=200)
-                #plt.close()
-                break
+        if self.SHOW_LOOPS:
+            # draw image
+            fig = plt.figure()
+            plt.imshow(self.canvas, cmap='Greens')
+            plt.title("Score: " + str(score))
+            loopDir = "results" + os.sep + 'persistance-' + str(self.PERSISTANCE_INDEX)
+            if not os.path.exists(loopDir):
+                os.makedirs(loopDir)
+            fig.savefig(loopDir + os.sep + "loop-" + str(self.currentLoop) + ".png", dpi=200)
+            plt.close()
+
+        return score
 
     def __init__(self):
         """
@@ -183,30 +169,29 @@ class Dendryt():
         """
         # where we store the number of moves required to find target
         self.results = []
-        finalResults = []
+        self.finalResults = []
         self.currentLoop = 0
 
         self.initialize()
 
         for assay in range(1, 99):
+            scores = []
             self.PERSISTANCE_INDEX = assay
             print("Now testing with persistance index of {}.".format(assay))
             # now do the loops
             for loop in range(0, self.MAX_LOOPS):
                 self.currentLoop = loop
-                self.launchSearch()
+                scores.append(self.launchSearch())
                 self.initialize()
 
-            meanMoves = int(np.mean(self.results))
-            stdDev = int(np.std(self.results))
-            print("Cell took an average of {} moves to find target in a {}×{} canvas. Tested {} times. Standard deviation of {}".format(meanMoves, self.CANVAS_SIZE, self.CANVAS_SIZE, self.MAX_LOOPS, stdDev))
-            finalResults.append(meanMoves)
+            print("Mean score:", np.mean(scores))
+            self.finalResults.append(np.mean(scores))
 
         fig = plt.figure()
-        plt.plot(finalResults)
-        plt.title("Mean moves to find target as a function of persistance index")
+        plt.plot(self.finalResults)
+        plt.title("Mean surface covered in {} moves as function of persistance index.".format(self.MAX_MOVES))
         plt.xlabel("Persistance index")
-        plt.ylabel("Mean number of moves (" + str(self.MAX_LOOPS) + " iterations)")
+        plt.ylabel("Mean surface covered (" + str(self.MAX_LOOPS) + " iterations)")
         fig.savefig("results" + os.sep + "final-results.png", dpi=200)
         plt.close()
 
