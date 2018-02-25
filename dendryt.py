@@ -2,6 +2,8 @@
 import os
 import numpy as np
 import matplotlib
+import mahotas as mh
+from skimage.measure import regionprops
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from random import randint
@@ -10,8 +12,8 @@ from random import choice
 class Dendryt():
     # CONFIG
     CANVAS_SIZE = 100
-    MAX_LOOPS = 20
-    MAX_MOVES = 20000
+    MAX_LOOPS = 50
+    MAX_MOVES = 2000
     # BETWEEN 1 AND 99
     PERSISTANCE_INDEX = 89
     SHOW_LOOPS = True
@@ -23,17 +25,26 @@ class Dendryt():
         """
         return [randint(0, self.CANVAS_SIZE - 1), randint(0, self.CANVAS_SIZE -1)]
 
+    def getMiddlePos(self):
+        """
+            Get the middle of the canvas
+        """
+        mid = int(self.CANVAS_SIZE / 2)
+        return [mid, mid]
+
     def setPos(self, pos, value):
         """
             Change a value on the canvas
         """
-        self.canvas[tuple(pos)] = value
+        currentValue = self.canvas[tuple(pos)]
+        self.canvas[tuple(pos)] = currentValue + 10
 
     def setInitialCellPos(self):
         """
             Set the starting position of the cell
         """
-        self.cellPos = self.startPos = self.getRandomPos()
+        #self.cellPos = self.startPos = self.getRandomPos()
+        self.cellPos = self.startPos = self.getMiddlePos()
         self.setPos(self.cellPos, 255)
 
     def getDirection(self):
@@ -148,12 +159,19 @@ class Dendryt():
             self.moveCell()
 
         # the score is the mean value of the image
-        score = np.mean(self.canvas)
+        #score = np.mean(self.canvas)
 
+        # score is number of pixels with value > 5
+        T = 5
+        labeled, objNb = mh.label(self.canvas > T)
+        regions = regionprops(labeled)
+        score = regions[0].area
+
+        #if self.SHOW_LOOPS and self.currentLoop == 0:
         if self.SHOW_LOOPS:
             # draw image
             fig = plt.figure()
-            plt.imshow(self.canvas, cmap='Greens')
+            plt.imshow(self.canvas, cmap='terrain')
             plt.title("Score: " + str(score))
             loopDir = "results" + os.sep + 'persistance-' + str(self.PERSISTANCE_INDEX)
             if not os.path.exists(loopDir):
@@ -167,14 +185,15 @@ class Dendryt():
         """
             Start the script
         """
-        # where we store the number of moves required to find target
-        self.results = []
+        # where we store the mean surface covered for each persistance
         self.finalResults = []
+        # where we store the current loop (MAX_LOOPS)
         self.currentLoop = 0
 
+        # create a blank canvas and place the cell in the middle
         self.initialize()
 
-        for assay in range(1, 99):
+        for assay in range(1, 100, 1):
             scores = []
             self.PERSISTANCE_INDEX = assay
             print("Now testing with persistance index of {}.".format(assay))
