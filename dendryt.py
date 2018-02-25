@@ -20,9 +20,9 @@ class Dendryt():
         # if we are on target get a new position, otherwise it's too easy :p
         while True:
             if cellPos != self.targetPos:
-                self.setPos(cellPos, 2)
+                #self.setPos(cellPos, 2)
                 self.cellPos = cellPos
-                self.startingPos = cellPos
+                #self.startingPos = cellPos
                 break
             else:
                 cellPos = self.getRandomPos()
@@ -37,8 +37,6 @@ class Dendryt():
     def moveCell(self):
 
         direction = self.getDirection()
-        #print("cell pos: ", self.cellPos)
-        #print("Direction:", direction)
 
         try:
             if direction == 'N':
@@ -62,23 +60,15 @@ class Dendryt():
                     newPos = 0
                 newCoord = [self.cellPos[0], newPos]
 
-            #print("New coord: ", newCoord)
-
             # check if the target is there
-            if self.canvas[tuple(newCoord)] == self.targetValue:
-                #print(self.canvas)
-                #plt.imshow(self.canvas)
-                #plt.title("Starting position: {}".format(self.startingPos))
-                #plt.show()
+            if newCoord == self.targetPos:
                 raise Exception
 
             # place the cell on the canvas
             # can raise IndexError
-            self.pixelValue += 1
-            self.setPos(newCoord, self.pixelValue)
+            self.setPos(newCoord, 2)
 
             # update the internal cell position
-            #print("update cellpos")
             self.cellPos = newCoord
 
         except IndexError:
@@ -87,50 +77,49 @@ class Dendryt():
 
 
     def initialize(self):
-        self.moves = 0
-        self.pixelValue = 2
-        # CANVAS
+        """
+            Initialize canvas to zeros. Set the target and initial cell positions.
+        """
         self.canvas = np.zeros((self.canvasSize, self.canvasSize), dtype=int)
+        # where the target is
         self.targetPos = self.getRandomPos()
-        self.setPos(self.targetPos, self.targetValue)
+        # create the cell in a random position
         self.setInitialCellPos()
 
     def launchSearch(self):
-        for x in range(0, self.maxMoves):
+        """
+            Move the cell around to try and find the target.
+        """
+        for move in range(0, self.maxMoves):
             try:
                 self.moveCell()
-                self.moves += 1
             except Exception:
-                #print("Target found in {} loops.".format(self.moves))
-                self.results.append(self.moves)
+                #print("Target found in {} loops.".format(move))
+                self.results.append(move)
                 break
-        self.initialize()
 
-        #print("Target not found :(")
-        #self.results.append(self.maxLoops)
-
-    # start script
     def __init__(self):
-        # config
+        """
+            Start the script
+        """
+        # CONFIG
         self.canvasSize = 10
         self.maxLoops = 10000
-        self.targetValue = 255
-        self.maxMoves = self.targetValue
-        # end config
+        self.maxMoves = 1000000
+        # END CONFIG
 
+        # where we store the number of moves required to find target
         self.results = []
 
         self.initialize()
 
+        # now do the loops
         for x in range(0, self.maxLoops):
             self.launchSearch()
-
-        #print("Cell pos:", self.cellPos)
-        # now start the search
+            self.initialize()
 
         meanMoves = int(np.mean(self.results))
         stdDev = int(np.std(self.results))
         print("Cell took an average of {} moves to find target in a {}×{} canvas. Tested {} times. Standard deviation of {}".format(meanMoves, self.canvasSize, self.canvasSize, self.maxLoops, stdDev))
-        #print(self.canvas)
 
 app = Dendryt()
