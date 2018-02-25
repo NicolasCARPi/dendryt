@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 import numpy as np
+import matplotlib
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
 from random import randint
 from random import choice
 
@@ -19,6 +22,7 @@ class Dendryt():
             if cellPos != self.targetPos:
                 self.setPos(cellPos, 2)
                 self.cellPos = cellPos
+                self.startingPos = cellPos
                 break
             else:
                 cellPos = self.getRandomPos()
@@ -61,12 +65,17 @@ class Dendryt():
             #print("New coord: ", newCoord)
 
             # check if the target is there
-            if self.canvas[tuple(newCoord)] == 1:
+            if self.canvas[tuple(newCoord)] == self.targetValue:
+                #print(self.canvas)
+                #plt.imshow(self.canvas)
+                #plt.title("Starting position: {}".format(self.startingPos))
+                #plt.show()
                 raise Exception
 
             # place the cell on the canvas
             # can raise IndexError
-            self.setPos(newCoord, 2)
+            self.pixelValue += 1
+            self.setPos(newCoord, self.pixelValue)
 
             # update the internal cell position
             #print("update cellpos")
@@ -79,10 +88,11 @@ class Dendryt():
 
     def initialize(self):
         self.moves = 0
+        self.pixelValue = 2
         # CANVAS
         self.canvas = np.zeros((self.canvasSize, self.canvasSize), dtype=int)
         self.targetPos = self.getRandomPos()
-        self.setPos(self.targetPos, 1)
+        self.setPos(self.targetPos, self.targetValue)
         self.setInitialCellPos()
 
     def launchSearch(self):
@@ -102,9 +112,10 @@ class Dendryt():
     # start script
     def __init__(self):
         # config
-        self.canvasSize = 100
-        self.maxMoves = 10000
-        self.maxLoops = 100
+        self.canvasSize = 10
+        self.maxLoops = 10000
+        self.targetValue = 255
+        self.maxMoves = self.targetValue
         # end config
 
         self.results = []
@@ -118,6 +129,8 @@ class Dendryt():
         # now start the search
 
         meanMoves = int(np.mean(self.results))
-        print("Cell took an average of {} moves to find target in a {}×{} canvas. Tested {} times.".format(meanMoves, self.canvasSize, self.canvasSize, self.maxLoops))
+        stdDev = int(np.std(self.results))
+        print("Cell took an average of {} moves to find target in a {}×{} canvas. Tested {} times. Standard deviation of {}".format(meanMoves, self.canvasSize, self.canvasSize, self.maxLoops, stdDev))
+        #print(self.canvas)
 
 app = Dendryt()
