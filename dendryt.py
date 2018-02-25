@@ -30,8 +30,18 @@ class Dendryt():
 
     # cell can get N S E or W
     def getDirection(self):
+        # are we still persistant?
+        if (randint(0, 100) > self.persistanceIndex):
+            # invert persistance mode
+            self.persistance = not self.persistance
+
+        # if we are in bullet mode continue in same direction
+        if (self.persistance):
+            return self.previousDir
+
         directions = ['N', 'E', 'S', 'W']
-        return choice(directions)
+        self.previousDir = choice(directions)
+        return self.previousDir
 
     # cell position
     def moveCell(self):
@@ -60,26 +70,43 @@ class Dendryt():
                     newPos = 0
                 newCoord = [self.cellPos[0], newPos]
 
+            #print("New coord:", newCoord)
             # check if the target is there
             if newCoord == self.targetPos:
                 raise Exception
 
             # place the cell on the canvas
             # can raise IndexError
-            self.setPos(newCoord, 2)
+            self.setPos(newCoord, 255)
 
             # update the internal cell position
             self.cellPos = newCoord
 
         except IndexError:
-            #print("Loop n°{}: Not moving cell out of canvas.".format(self.loop))
+            print("Loop n°{}: Not moving cell out of canvas.".format(self.loop))
+            print("Previous dir: ", self.previousDir)
+            # go back where we came from
+            self.persistance = True
+            self.previousDir = self.getInverseDirection(direction)
+            print("Previous dir after inversion: ", self.previousDir)
             pass
 
+    def getInverseDirection(self, direction):
+        if direction == 'N':
+            return 'S'
+        elif direction == 'E':
+            return 'W'
+        elif direction == 'S':
+            return 'N'
+        elif direction == 'W':
+            return 'E'
 
     def initialize(self):
         """
             Initialize canvas to zeros. Set the target and initial cell positions.
         """
+        self.persistance = True
+        self.previousDir = 'N'
         self.canvas = np.zeros((self.canvasSize, self.canvasSize), dtype=int)
         # where the target is
         self.targetPos = self.getRandomPos()
@@ -94,8 +121,10 @@ class Dendryt():
             try:
                 self.moveCell()
             except Exception:
-                #print("Target found in {} loops.".format(move))
+                #print("Target found in {} moves.".format(move))
                 self.results.append(move)
+                plt.imshow(self.canvas, cmap='binary')
+                plt.show()
                 break
 
     def __init__(self):
@@ -103,9 +132,10 @@ class Dendryt():
             Start the script
         """
         # CONFIG
-        self.canvasSize = 10
-        self.maxLoops = 10000
-        self.maxMoves = 1000000
+        self.canvasSize = 1500
+        self.maxLoops = 100
+        self.maxMoves = 10000000
+        self.persistanceIndex = 45
         # END CONFIG
 
         # where we store the number of moves required to find target
