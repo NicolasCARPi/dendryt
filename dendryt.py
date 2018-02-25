@@ -8,11 +8,19 @@ from random import randint
 from random import choice
 
 class Dendryt():
+    # CONFIG
+    CANVAS_SIZE = 200
+    MAX_LOOPS = 25
+    MAX_MOVES = 10000000
+    # BETWEEN 1 AND 99
+    PERSISTANCE_INDEX = 89
+    # END CONFIG
+
     def getRandomPos(self):
         """
             Get a random position on the canvas
         """
-        return [randint(0, self.canvasSize - 1), randint(0, self.canvasSize -1)]
+        return [randint(0, self.CANVAS_SIZE - 1), randint(0, self.CANVAS_SIZE -1)]
 
     def setPos(self, pos, value):
         """
@@ -48,7 +56,7 @@ class Dendryt():
             Select where to go. Returns 'N', 'S', 'E' or 'W'.
         """
         # are we still persistant?
-        if (randint(0, 100) > self.persistanceIndex):
+        if (randint(0, 100) > self.PERSISTANCE_INDEX):
             # invert persistance mode
             self.persistance = not self.persistance
 
@@ -72,29 +80,29 @@ class Dendryt():
                 newPos = self.cellPos[0] - 1
                 if newPos < 0:
                     newPos = 0
-                if newPos > self.canvasSize - 1:
-                    newPos = self.canvasSize - 1
+                if newPos > self.CANVAS_SIZE - 1:
+                    newPos = self.CANVAS_SIZE - 1
                 newCoord = [newPos, self.cellPos[1]]
             elif direction == 'E':
                 newPos = self.cellPos[1] + 1
                 if newPos < 0:
                     newPos = 0
-                if newPos > self.canvasSize - 1:
-                    newPos = self.canvasSize - 1
+                if newPos > self.CANVAS_SIZE - 1:
+                    newPos = self.CANVAS_SIZE - 1
                 newCoord = [self.cellPos[0], newPos]
             elif direction == 'S':
                 newPos = self.cellPos[0] + 1
                 if newPos < 0:
                     newPos = 0
-                if newPos > self.canvasSize - 1:
-                    newPos = self.canvasSize - 1
+                if newPos > self.CANVAS_SIZE - 1:
+                    newPos = self.CANVAS_SIZE - 1
                 newCoord = [newPos, self.cellPos[1]]
             elif direction == 'W':
                 newPos = self.cellPos[1] - 1
                 if newPos < 0:
                     newPos = 0
-                if newPos > self.canvasSize - 1:
-                    newPos = self.canvasSize - 1
+                if newPos > self.CANVAS_SIZE - 1:
+                    newPos = self.CANVAS_SIZE - 1
                 newCoord = [self.cellPos[0], newPos]
             #with open("results" + os.sep + "loop-" + str(self.currentLoop) + ".txt", "a") as log:
             #    log.write("Moving cell", direction)
@@ -140,7 +148,7 @@ class Dendryt():
         """
         self.persistance = False
         self.previousDir = 'N'
-        self.canvas = np.zeros((self.canvasSize, self.canvasSize), dtype=int)
+        self.canvas = np.zeros((self.CANVAS_SIZE, self.CANVAS_SIZE), dtype=int)
         # where the target is
         self.targetPos = self.getRandomPos()
         self.setPos(self.targetPos, 255)
@@ -151,7 +159,7 @@ class Dendryt():
         """
             Move the cell around to try and find the target.
         """
-        for move in range(0, self.maxMoves):
+        for move in range(0, self.MAX_MOVES):
             try:
                 self.moveCell()
             except Exception:
@@ -162,40 +170,44 @@ class Dendryt():
                 self.canvas[tuple(self.startPos)] = 200
 
                 # draw image
-                fig = plt.figure()
-                plt.imshow(self.canvas, cmap='Greens')
-                plt.title("Target found in {} moves. Start {}. Target {}".format(move, self.startPos, self.targetPos))
-                #plt.show()
-                fig.savefig("results" + os.sep + "loop-" + str(self.currentLoop) + ".png", dpi=200)
-                plt.close()
+                #fig = plt.figure()
+                #plt.imshow(self.canvas, cmap='Greens')
+                #plt.title("Target found in {} moves. Start {}. Target {}".format(move, self.startPos, self.targetPos))
+                #fig.savefig("results" + os.sep + "loop-" + str(self.currentLoop) + ".png", dpi=200)
+                #plt.close()
                 break
 
     def __init__(self):
         """
             Start the script
         """
-        # CONFIG
-        self.canvasSize = 500
-        self.maxLoops = 20
-        self.maxMoves = 10000000
-        # between 1 and 100
-        self.persistanceIndex = 69
-        # END CONFIG
-
         # where we store the number of moves required to find target
         self.results = []
+        finalResults = []
         self.currentLoop = 0
 
         self.initialize()
 
-        # now do the loops
-        for loop in range(0, self.maxLoops):
-            self.currentLoop = loop
-            self.launchSearch()
-            self.initialize()
+        for assay in range(1, 99):
+            self.PERSISTANCE_INDEX = assay
+            print("Now testing with persistance index of {}.".format(assay))
+            # now do the loops
+            for loop in range(0, self.MAX_LOOPS):
+                self.currentLoop = loop
+                self.launchSearch()
+                self.initialize()
 
-        meanMoves = int(np.mean(self.results))
-        stdDev = int(np.std(self.results))
-        print("Cell took an average of {} moves to find target in a {}×{} canvas. Tested {} times. Standard deviation of {}".format(meanMoves, self.canvasSize, self.canvasSize, self.maxLoops, stdDev))
+            meanMoves = int(np.mean(self.results))
+            stdDev = int(np.std(self.results))
+            print("Cell took an average of {} moves to find target in a {}×{} canvas. Tested {} times. Standard deviation of {}".format(meanMoves, self.CANVAS_SIZE, self.CANVAS_SIZE, self.MAX_LOOPS, stdDev))
+            finalResults.append(meanMoves)
+
+        fig = plt.figure()
+        plt.plot(finalResults)
+        plt.title("Mean moves to find target as a function of persistance index")
+        plt.xlabel("Persistance index")
+        plt.ylabel("Mean number of moves (" + str(self.MAX_LOOPS) + " iterations)")
+        fig.savefig("results" + os.sep + "final-results.png", dpi=200)
+        plt.close()
 
 app = Dendryt()
