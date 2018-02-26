@@ -19,4 +19,4 @@ Persistance of 81:
 
 All the means plotted:
 
-![all](https://imgur.com/a/7mQ4O)
+![all](https://i.imgur.com/maUiqKN.png)
